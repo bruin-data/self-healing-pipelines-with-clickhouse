@@ -1,0 +1,13 @@
+default_environment: demo
+environments:
+  demo:
+    connections:
+      clickhouse:
+        - name: clickhouse-meetup
+          host: "${CLICKHOUSE_HOST}"
+          port: 9440
+          http_port: 8443
+          username: "${CLICKHOUSE_USERNAME}"
+          password: "${CLICKHOUSE_PASSWORD}"
+          database: harborside_meetup
+          secure: 1

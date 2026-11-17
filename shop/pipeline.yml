@@ -1,0 +1,8 @@
+name: harborside-clickhouse-meetup
+schedule: daily
+start_date: "2026-05-01"
+catchup: false
+retries: 0
+tags: [harborside, meetup, clickhouse]
+default_connections:
+  clickhouse: clickhouse-meetup
