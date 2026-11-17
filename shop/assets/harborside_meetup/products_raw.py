@@ -71,10 +71,10 @@ def materialize():
         })
 
     df = pd.DataFrame(rows)
-    df["extracted_at"] = datetime.fromisoformat(str(context.args.end_date)[:10])
+    df["extracted_at"] = datetime.fromisoformat(str(context.end_date)[:10])
     df["extracted_at"] = pd.to_datetime(df["extracted_at"]).astype("datetime64[us]")
 
-    end_str = str(context.args.end_date)
+    end_str = str(context.end_date)
     end = date.fromisoformat(end_str[:10])
 
     if end >= DRIFT_DATE:

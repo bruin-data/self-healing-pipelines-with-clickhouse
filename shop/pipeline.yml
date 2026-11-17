@@ -1,5 +1,4 @@
 name: harborside-clickhouse-meetup
-schedule: daily
 start_date: "2026-05-01"
 catchup: false
 retries: 0

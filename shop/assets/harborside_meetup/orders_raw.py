@@ -157,8 +157,8 @@ def generate_day(d: date) -> pd.DataFrame:
 
 
 def materialize():
-    start_str = str(context.args.start_date)
-    end_str = str(context.args.end_date)
+    start_str = str(context.start_date)
+    end_str = str(context.end_date)
 
     start = date.fromisoformat(start_str[:10])
     end = date.fromisoformat(end_str[:10])

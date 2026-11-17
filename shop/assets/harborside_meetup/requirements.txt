@@ -1,2 +1,2 @@
 pandas==2.2.2
-bruin-sdk
+bruin-sdk==0.5.2
