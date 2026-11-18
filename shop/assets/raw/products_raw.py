@@ -1,5 +1,4 @@
 """ @bruin
-name: harborside_meetup.products_raw
 type: python
 image: python:3.11
 connection: clickhouse-meetup

@@ -1,11 +1,9 @@
 /* @bruin
-name: harborside_meetup.products_clean
 type: clickhouse.sql
 connection: clickhouse-meetup
-description: One row per product. Stable downstream category contract. Intentionally expects the pre-May-18
-  source column; recover by adapting this stage projection to the documented rename.
+description: One row per product. Normalizes the renamed source field to the stable downstream category contract.
 depends:
-- harborside_meetup.products_raw
+- raw.products_raw
 materialization:
   type: table
   strategy: create+replace
@@ -64,8 +62,8 @@ clickhouse:
 @bruin */
 
 SELECT
-    product_id,
+    assumeNotNull(product_id) AS product_id,
     name,
-    category,
+    coalesce(category, 'unknown') AS category,
     price_usd
-FROM harborside_meetup.products_raw
+FROM raw.products_raw

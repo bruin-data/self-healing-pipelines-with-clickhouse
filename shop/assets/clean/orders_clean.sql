@@ -1,5 +1,4 @@
 /* @bruin
-name: harborside_meetup.orders_clean
 type: clickhouse.sql
 connection: clickhouse-meetup
 description: 'Conformed storefront orders: one row per order. Deduplicates the append-only raw table on
@@ -9,7 +8,7 @@ description: 'Conformed storefront orders: one row per order. Deduplicates the a
 
   '
 depends:
-- harborside_meetup.orders_raw
+- raw.orders_raw
 materialization:
   type: table
   strategy: create+replace
@@ -72,14 +71,14 @@ clickhouse:
 @bruin */
 
 SELECT
-    order_id,
+    assumeNotNull(order_id) AS order_id,
     user_id,
     product_id,
-    country,
+    assumeNotNull(country) AS country,
     amount_usd,
     created_at,
-    order_date
-FROM harborside_meetup.orders_raw
+    toDate(assumeNotNull(order_date)) AS order_date
+FROM raw.orders_raw
 WHERE order_id IS NOT NULL
 QUALIFY ROW_NUMBER() OVER (
     PARTITION BY order_id

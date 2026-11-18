@@ -4,7 +4,7 @@ A hands-on meetup demo: a product-source schema change breaks a pipeline; an age
 
 ## Demo
 
-[Shop walkthrough](shop/README.md): deterministic Harborside orders and products, duplicate handling, source schema drift, daily revenue, lineage and data quality checks. Five assets, one isolated `harborside_meetup` database. Data and incidents are synthetic.
+[Shop walkthrough](shop/README.md): deterministic Harborside orders and products, duplicate handling, source schema drift, daily revenue, lineage and data quality checks. Five assets across isolated `raw`, `clean`, and `mart` databases on the dedicated meetup service. Data and incidents are synthetic.
 
 [Agent policy](AGENTS.md) · [Source attribution](PROVENANCE.md) · [Connection template](config.example.yml)
 

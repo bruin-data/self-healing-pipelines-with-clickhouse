@@ -1,5 +1,4 @@
 /* @bruin
-name: harborside_meetup.revenue_daily
 type: clickhouse.sql
 connection: clickhouse-meetup
 description: 'Daily storefront revenue broken down by country and product category. One row per (order_date,
@@ -8,8 +7,8 @@ description: 'Daily storefront revenue broken down by country and product catego
 
   '
 depends:
-- harborside_meetup.orders_clean
-- harborside_meetup.products_clean
+- clean.orders_clean
+- clean.products_clean
 materialization:
   type: table
   strategy: create+replace
@@ -68,15 +67,15 @@ custom_checks:
     noise.
   query: 'WITH
 
-    expected AS (SELECT toInt64(round(sum(amount_usd) * 100)) AS cents FROM harborside_meetup.orders_clean),
+    expected AS (SELECT toInt64(round(sum(amount_usd) * 100)) AS cents FROM clean.orders_clean),
 
-    actual AS (SELECT toInt64(round(sum(revenue_usd) * 100)) AS cents FROM harborside_meetup.revenue_daily)
+    actual AS (SELECT toInt64(round(sum(revenue_usd) * 100)) AS cents FROM mart.revenue_daily)
 
     SELECT count() FROM expected CROSS JOIN actual WHERE expected.cents != actual.cents'
   value: 0
 - name: all_orders_have_products
   description: A missing catalog key must fail instead of silently losing orders.
-  query: SELECT count() FROM harborside_meetup.orders_clean AS o LEFT ANTI JOIN harborside_meetup.products_clean
+  query: SELECT count() FROM clean.orders_clean AS o LEFT ANTI JOIN clean.products_clean
     AS p ON o.product_id = p.product_id
   value: 0
 unit_tests:
@@ -86,7 +85,7 @@ unit_tests:
 
     '
   inputs:
-  - asset: harborside_meetup.orders_clean
+  - asset: clean.orders_clean
     rows:
     - order_id: O1
       user_id: U1
@@ -102,7 +101,7 @@ unit_tests:
       amount_usd: 50.0
       created_at: '2026-05-01 11:00:00'
       order_date: '2026-05-01'
-  - asset: harborside_meetup.products_clean
+  - asset: clean.products_clean
     rows:
     - product_id: P001
       name: Throw Blanket
@@ -136,8 +135,8 @@ SELECT
     COUNT(*) AS order_count,
     COUNT(DISTINCT orders.user_id) AS distinct_users,
     ROUND(SUM(orders.amount_usd), 2) AS revenue_usd
-FROM harborside_meetup.orders_clean AS orders
-INNER JOIN harborside_meetup.products_clean AS products
+FROM clean.orders_clean AS orders
+INNER JOIN clean.products_clean AS products
     ON orders.product_id = products.product_id
 GROUP BY 1, 2, 3
 ORDER BY 1 DESC, 6 DESC

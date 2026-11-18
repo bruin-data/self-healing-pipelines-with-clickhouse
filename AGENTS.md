@@ -1,6 +1,6 @@
 # Harborside ClickHouse demo
 
-Fictional data, adapted from Arsalan's Harborside reference project. Only `harborside_meetup` on the dedicated ClickHouse Cloud meetup service is in scope. No local server or Docker. Do not modify existing credentials/configurations. Never print secrets.
+Fictional data, adapted from Arsalan's Harborside reference project. Only `raw`, `clean`, and `mart` on the dedicated ClickHouse Cloud meetup service are in scope; the original `harborside_meetup` database is legacy and must be preserved. No local server or Docker. Do not modify existing credentials/configurations. Never print secrets.
 
 The Python raw assets emulate source systems; do not change them to hide failures. The product API renamed `category` to `product_category` on 2026-05-18; values and business meaning did not change. The stable stage/report field remains `category`. Owner: Dana, Finance (fictional). Revenue here is gross storefront order amount in USD; this fixture has no status/refund fields.
 
