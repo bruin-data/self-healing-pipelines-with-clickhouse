@@ -2,11 +2,11 @@
 type: python
 image: python:3.11
 connection: clickhouse-meetup
-description: Synthetic Harborside fixture from Arsalan. Replaces this demo raw snapshot for the selected
-  interval; no customer data. One row per source order, including deliberate duplicates from May 16.
+description: Synthetic Harborside order extracts appended to raw. Stable daily records are replayed,
+  with a few new synthetic orders per non-empty run and deliberate duplicates from May 16.
 materialization:
   type: table
-  strategy: create+replace
+  strategy: append
 owner: dana@harborside.example
 tags:
 - harborside
@@ -72,6 +72,7 @@ from bruin import context
 import hashlib
 import os
 import random
+import uuid
 from datetime import date, datetime, timedelta
 
 import pandas as pd
@@ -175,6 +176,19 @@ def materialize():
         return empty_orders_frame()
 
     df = pd.concat(frames, ignore_index=True)[ORDER_COLUMNS]
+    # New records simulate arrivals while deterministic source records remain replayable.
+    rng = random.SystemRandom()
+    day = df['order_date'].iloc[-1]
+    arrivals = [{
+        'order_id': f"N{uuid.uuid4().hex[:16]}",
+        'user_id': f"U{rng.randint(1, 50000):06d}",
+        'product_id': rng.choice(PRODUCT_IDS),
+        'country': rng.choice(COUNTRIES),
+        'amount_usd': round(rng.uniform(10, 200), 2),
+        'created_at': datetime.combine(day, datetime.min.time()) + timedelta(seconds=rng.randint(0, 86399)),
+        'order_date': day,
+    } for _ in range(rng.randint(3, 8))]
+    df = pd.concat([df, pd.DataFrame(arrivals)], ignore_index=True)
     df["amount_usd"] = df["amount_usd"].astype("float64")
     df["created_at"] = pd.to_datetime(df["created_at"]).astype("datetime64[us]")
     df["order_date"] = pd.to_datetime(df["order_date"])
