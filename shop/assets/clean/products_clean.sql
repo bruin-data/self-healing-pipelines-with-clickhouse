@@ -64,6 +64,6 @@ clickhouse:
 SELECT
     assumeNotNull(product_id) AS product_id,
     name,
-    coalesce(category, 'unknown') AS category,
+    coalesce(product_category, 'unknown') AS category,
     price_usd
 FROM raw.products_raw
