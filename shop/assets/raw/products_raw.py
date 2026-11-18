@@ -2,11 +2,11 @@
 type: python
 image: python:3.11
 connection: clickhouse-meetup
-description: Synthetic Harborside fixture from Arsalan. Replaces this demo raw snapshot for the selected
-  interval; no customer data. One row per product. category is renamed to product_category from 2026-05-18.
+description: Synthetic Harborside product extracts. Stable catalog records recur in each extract, with
+  a few new synthetic products per run. The source renames category to product_category from 2026-05-18.
 materialization:
   type: table
-  strategy: create+replace
+  strategy: append
 owner: dana@harborside.example
 tags:
 - harborside
@@ -50,6 +50,7 @@ from bruin import context
 
 import os
 import random
+import uuid
 from datetime import date, datetime, timezone
 
 import pandas as pd
@@ -67,6 +68,16 @@ def materialize():
             "name": f"Product {i:03d}",
             "category": rng.choice(CATEGORIES),
             "price_usd": round(rng.uniform(10, 400), 2),
+        })
+
+    # Keep the original 30 products stable; each extract also brings new products.
+    for _ in range(random.SystemRandom().randint(3, 6)):
+        product_id = f"N{uuid.uuid4().hex[:16]}"
+        rows.append({
+            "product_id": product_id,
+            "name": f"Product {product_id}",
+            "category": random.SystemRandom().choice(CATEGORIES),
+            "price_usd": round(random.SystemRandom().uniform(10, 400), 2),
         })
 
     df = pd.DataFrame(rows)

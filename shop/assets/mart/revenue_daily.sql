@@ -122,6 +122,8 @@ unit_tests:
       revenue_usd: 150.0
 clickhouse:
   engine: MergeTree()
+  settings:
+    allow_nullable_key: 1
   order_by:
   - order_date
   - country

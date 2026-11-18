@@ -1,7 +1,7 @@
 /* @bruin
 type: clickhouse.sql
 connection: clickhouse-meetup
-description: One row per product. Normalizes the renamed source field to the stable downstream category contract.
+description: One latest row per product. The category contract must remain populated across source changes.
 depends:
 - raw.products_raw
 materialization:
@@ -35,10 +35,7 @@ columns:
   description: Product display name.
 - name: category
   type: String
-  description: 'Product category, normalized from either source column name. `unknown` when the source
-    omitted it.
-
-    '
+  description: Product category; missing source values must fail the not-null check.
   checks:
   - name: not_null
   - name: accepted_values
@@ -64,6 +61,10 @@ clickhouse:
 SELECT
     assumeNotNull(product_id) AS product_id,
     name,
-    coalesce(category, 'unknown') AS category,
+    category,
     price_usd
 FROM raw.products_raw
+QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY product_id
+    ORDER BY extracted_at DESC, _ingestr_loaded_at DESC, _ingestr_run_id DESC
+) = 1

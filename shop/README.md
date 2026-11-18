@@ -1,32 +1,24 @@
 # Harborside self-healing demo for ClickHouse Cloud
 
-A ClickHouse adaptation of [Arsalan’s Shop example](https://github.com/arsalann/demo-self-heal/tree/main/shop). Synthetic fixtures, no customer data. See ../PROVENANCE.md.
+Synthetic data, adapted from Arsalan’s Shop example. Five assets run on the dedicated meetup ClickHouse service: Python extracts in `raw`, latest conformed data in `clean`, and daily revenue in `mart`. See ../PROVENANCE.md.
 
-Python orders/products → raw tables → cleaned orders/products → category/country daily revenue. Five assets across three databases on the dedicated Cloud service: `raw`, `clean`, and `mart`. Raw snapshots intentionally replace this small demo window for repeatable rehearsal; this is not an incremental production ingestion design.
+`orders_raw` and `products_raw` append extracts. The 30 original products and generated daily orders are repeatable; each non-empty extract also adds a few new synthetic records. Replaying an interval intentionally appends existing records again, so raw counts grow. The clean assets deduplicate by their business keys. Orders use an inclusive date loop; overlapping windows also repeat boundary days. This is a demo, not exactly-once ingestion.
 
-## Connection
+The product API changes `category` to `product_category` at 2026-05-18. In a table seeded with an old extract and then an appended new extract, both nullable physical columns exist: historical rows use the former and current rows the latter. Before repair, the product stage reads only `category`. Its `not_null` check catches missing categories on the latest new-schema rows. The stable downstream output is still called `category`.
 
-Use a NEW private `.bruin.yml` from ../config.example.yml, or an explicit private config path. TLS ports 9440/8443. Never overwrite an existing config without approval. A ClickHouse Cloud management API key is not a SQL username/password. Database creation requires a SQL identity with CREATE DATABASE; normal demo operations are scoped to raw, clean, and mart on the dedicated meetup service.
+## Connection and execution
 
-## Rehearsal
-
-To rehearse from the healthy pre-rename baseline, first change the products stage projection from `coalesce(product_category, 'unknown')` to `coalesce(category, 'unknown')`. Run each command separately, with the selected private `--config-file` when needed:
+Use the private ignored `.bruin.yml` with `clickhouse-meetup`. Never commit credentials. A Cloud API key is not a ClickHouse SQL credential. Keep Cloud schedules disabled while rehearsing; run individual assets.
 
 ```sh
 bruin validate --fast shop
 bruin run shop/assets/raw/orders_raw.py --start-date 2026-05-01 --end-date 2026-05-17
-bruin run shop/assets/raw/products_raw.py --start-date 2026-05-01 --end-date 2026-05-17
+bruin run shop/assets/raw/products_raw.py --start-date 2026-05-16 --end-date 2026-05-17
 bruin run shop/assets/clean/orders_clean.sql
 bruin run shop/assets/clean/products_clean.sql
 bruin run shop/assets/mart/revenue_daily.sql
 ```
 
-For a rehearsal, first switch the products stage projection back to `category` and establish the pre-rename baseline. Then run **only products_raw.py** with `--start-date 2026-05-18 --end-date 2026-05-19`, then products_clean.sql. The raw snapshot now contains product_category; the old stage SQL should fail with an unknown identifier. Existing stage/report tables can remain stale: inspect the failed run, not only the presence of tables.
+After a clean pre-change baseline, append the new product extract with `--start-date 2026-05-18 --end-date 2026-05-19`, then run only `clean.products_clean`. Expect its `category.not_null` check to fail. The table may already have been rebuilt when the check fails, so downstream data must not be treated as recovered until rebuilt and checked.
 
-Agent prompt: “Diagnose the failed products_clean asset using logs, lineage and the documented source change. Repair the stable category contract without changing raw generators or weakening checks. Rerun the affected assets and prove recovery.”
-
-Expected stage repair: `coalesce(product_category, 'unknown') AS category`. Rebuild products_clean then revenue_daily; repeat both and verify counts and revenue remain stable. This repair targets the current post-rename schema. To replay the old baseline, restore the old projection as well as the pre-rename source snapshot.
-
-## Cloud
-
-Cloud deployment is pending the user's Bruin Cloud API key and SQL credentials. Keep scheduling disabled during setup. Import the same clickhouse-meetup connection, connect a repository containing this pipeline, verify parsing, run selected assets and inspect real logs. Do not equate deployment with a working self-healing trigger; configure and verify agent access and triggers separately.
+Diagnose the actual failed run, inspect the source columns, and preserve both historical and new categories. A repair can use `coalesce(product_category, category)` when both columns are present, while retaining the not-null check. A direct reference to a missing column fails before COALESCE runs, so verify both columns exist when testing the repaired projection. Verify historical and new records using isolated synthetic fixtures. Rebuild the stage and revenue separately, compare raw/deduplicated order counts and revenue, and repeat to prove stable results. See [the self-healing runbook](../docs/self-healing.md).
